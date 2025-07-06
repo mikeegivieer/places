@@ -50,6 +50,7 @@ dependencies {
     implementation(libs.play.services.maps)
 
     implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.activity)
     kapt(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
 
