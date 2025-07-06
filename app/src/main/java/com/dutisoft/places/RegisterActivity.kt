@@ -1,10 +1,14 @@
 package com.dutisoft.places
 
+import User
 import android.graphics.BitmapFactory
 import android.os.Bundle
-import android.text.TextUtils
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
+
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class RegisterActivity : AppCompatActivity() {
     private lateinit var avatarView: AvatarAnimationSurfaceView
@@ -73,16 +77,39 @@ class RegisterActivity : AppCompatActivity() {
                 }
 
                 else -> {
-                    val selectedAvatarRes = avatarResIds[currentIndex]
+                    val selectedAvatarName = "avatar$currentIndex"
 
-                    // Aquí puedes guardar los datos (ej. en base de datos, preferences, etc.)
-                    Toast.makeText(
-                        this,
-                        "Usuario: $username\nPassword: $password\nAvatar: avatar$currentIndex",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    lifecycleScope.launch(Dispatchers.IO) {
+                        try {
+                            val db = DatabaseProvider.getDatabase(this@RegisterActivity)
+                            val userDao = db.userDao()
 
-                    // TODO: Guardar en persistencia o enviar al servidor si es necesario
+                            val user = User(
+                                username = username,
+                                password = password,
+                                avatar = selectedAvatarName
+                            )
+
+                            userDao.insertUser(user)
+
+                            runOnUiThread {
+                                Toast.makeText(
+                                    this@RegisterActivity,
+                                    "Usuario guardado correctamente",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            runOnUiThread {
+                                Toast.makeText(
+                                    this@RegisterActivity,
+                                    "Error al guardar usuario: ${e.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+                    }
                 }
             }
         }
