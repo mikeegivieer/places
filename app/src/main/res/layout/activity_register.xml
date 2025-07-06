@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
+    android:orientation="vertical"
     android:layout_height="match_parent"
     android:padding="@dimen/screen_padding">
 
@@ -11,22 +12,20 @@
         android:id="@+id/carouselLayout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:layout_marginBottom="50dp"
+        android:layout_gravity="center"
         android:gravity="center"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toTopOf="@+id/linearLayout"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginBottom="16dp">
+        android:orientation="horizontal">
 
         <!-- Flecha izquierda -->
         <ImageView
             android:id="@+id/arrowLeft"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:src="@drawable/baseline_arrow_back_ios_24"
+            android:layout_gravity="center_vertical"
             android:contentDescription="@string/previous"
-            android:padding="8dp" />
+            android:padding="8dp"
+            android:src="@drawable/baseline_arrow_back_ios_24" />
 
         <!-- Avatar animado -->
         <com.dutisoft.places.AvatarAnimationSurfaceView
@@ -42,9 +41,10 @@
             android:id="@+id/arrowRight"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:src="@drawable/baseline_arrow_forward_ios_24"
             android:contentDescription="@string/next"
-            android:padding="8dp" />
+            android:layout_gravity="center_vertical"
+            android:padding="8dp"
+            android:src="@drawable/baseline_arrow_forward_ios_24" />
     </LinearLayout>
 
     <!-- Inputs y botón -->
@@ -54,8 +54,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        tools:layout_editor_absoluteX="20dp">
 
         <EditText
             android:id="@+id/editTextText"
@@ -83,4 +82,4 @@
             android:text="@string/register" />
     </LinearLayout>
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

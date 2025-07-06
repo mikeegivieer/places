@@ -46,7 +46,7 @@ class MapFragment : Fragment() {
                 db.clearAllTables()
 
                 // Inserta usuario
-                val user1 = User(username = "miguel", profilePhotoUri = "")
+                val user1 = User(username = "miguel", avatar = "")
                 db.userDao().insertUser(user1)
 
                 // Inserta categorías
@@ -76,7 +76,7 @@ class MapFragment : Fragment() {
                 val categories = categoryDao.getAllCategories()
 
                 if (user != null) {
-                    Log.d("RoomDump", "→ ${user.username} | ${user.profilePhotoUri}")
+                    Log.d("RoomDump", "→ ${user.username} | ${user.avatar}")
                 }
 
                 Log.d("RoomDump", "📦 Categorías:")
