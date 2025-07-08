@@ -34,6 +34,14 @@
             android:hint="@string/password"
             android:inputType="textPassword" />
 
+        <TextView
+            android:id="@+id/registerTextView"
+            android:layout_marginTop="@dimen/margin_top_input_text"
+            android:layout_width="match_parent"
+            android:gravity="center_horizontal"
+            android:layout_height="wrap_content"
+            android:text="@string/registrar" />
+
         <Button
             android:id="@+id/button"
             android:layout_width="match_parent"

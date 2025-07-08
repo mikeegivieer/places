@@ -47,4 +47,5 @@
     <string name="password">Password</string>
     <string name="get_in">Get in</string>
     <string name="register">Register</string>
+    <string name="registrar">Registrar</string>
 </resources>
