@@ -4,8 +4,10 @@ import AppDatabase
 import android.os.Bundle
 import android.util.Log
 import android.view.*
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.dutisoft.places.databinding.FragmentMapBinding
 import kotlinx.coroutines.Dispatchers
@@ -45,19 +47,21 @@ class MapFragment : Fragment() {
                     database.placeDao().getAllPlaces()
                 }
 
+                Log.d("MapFragment", "Total lugares: ${places.size}")
+
                 if (places.isEmpty()) {
-                    Log.d("MapFragment", "No hay lugares registrados")
+                    Toast.makeText(requireContext(), "No hay lugares registrados", Toast.LENGTH_SHORT).show()
                     return@launch
                 }
 
-                // Inflar layout del diálogo
                 val dialogView = LayoutInflater.from(requireContext())
                     .inflate(R.layout.dialog_place_list, null)
 
                 val recyclerView = dialogView.findViewById<RecyclerView>(R.id.recyclerViewPlaces)
+                recyclerView.layoutManager = LinearLayoutManager(requireContext()) // 🔥 importante
+                Log.i("PLACES", places.toString())
                 recyclerView.adapter = PlaceAdapter(places)
 
-                // Mostrar el diálogo
                 val dialog = android.app.AlertDialog.Builder(requireContext())
                     .setTitle("Lugares registrados")
                     .setView(dialogView)
@@ -71,6 +75,7 @@ class MapFragment : Fragment() {
             }
         }
     }
+
 
     override fun onDestroyView() {
         super.onDestroyView()

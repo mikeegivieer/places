@@ -1,6 +1,7 @@
 package com.dutisoft.places
 
 import Place
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -26,6 +27,7 @@ class PlaceAdapter(private val places: List<Place>) :
 
     override fun onBindViewHolder(holder: PlaceViewHolder, position: Int) {
         val place = places[position]
+        Log.d("Adapter", "Binding ${place.name}")
         holder.name.text = place.name
         holder.category.text = "Categoría ID: ${place.categoryId ?: "N/A"}"
         holder.description.text = place.description
