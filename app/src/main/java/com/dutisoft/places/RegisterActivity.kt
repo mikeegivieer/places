@@ -1,6 +1,5 @@
 package com.dutisoft.places
 
-import User
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.widget.*
