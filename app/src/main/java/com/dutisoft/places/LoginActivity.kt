@@ -43,6 +43,7 @@ class LoginActivity : AppCompatActivity() {
                 }
 
                 else -> {
+                    /*
                     lifecycleScope.launch(Dispatchers.IO) {
                         try {
                             val db = DatabaseProvider.getDatabase(this@LoginActivity)
@@ -80,6 +81,9 @@ class LoginActivity : AppCompatActivity() {
                             }
                         }
                     }
+
+
+                    */
                 }
             }
         }

@@ -77,7 +77,7 @@ class RegisterActivity : AppCompatActivity() {
 
                 else -> {
                     val selectedAvatarName = "avatar$currentIndex"
-
+/*
                     lifecycleScope.launch(Dispatchers.IO) {
                         try {
                             val db = DatabaseProvider.getDatabase(this@RegisterActivity)
@@ -109,6 +109,8 @@ class RegisterActivity : AppCompatActivity() {
                             }
                         }
                     }
+
+                */
                 }
             }
         }
