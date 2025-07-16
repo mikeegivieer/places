@@ -28,7 +28,7 @@
                 android:id="@+id/toolbar"
                 android:layout_width="match_parent"
                 android:layout_height="62dp"
-                android:background="?attr/colorPrimary"
+                android:background="@color/black"
                 app:layout_collapseMode="pin"
                 app:navigationIcon="@drawable/baseline_menu_24" /> <!-- ícono de hamburguesa -->
 

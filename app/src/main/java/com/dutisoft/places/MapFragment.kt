@@ -22,6 +22,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import androidx.appcompat.widget.PopupMenu
 import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -79,10 +80,28 @@ class MapFragment : Fragment() {
         }
 
 
-        // Configurar el click en el ícono de la toolbar
-        binding.toolbar.setNavigationOnClickListener {
-            fetchAllPlaces()
+        binding.toolbar.setNavigationOnClickListener { view ->
+            val popup = PopupMenu(requireContext(), view)
+            popup.menuInflater.inflate(R.menu.toolbar_menu, popup.menu)
+
+            // Opcional: manejar clics en cada ítem
+            popup.setOnMenuItemClickListener { menuItem ->
+                when (menuItem.itemId) {
+                    R.id.menu_my_places -> {
+                        // Acción para My places
+                        true
+                    }
+                    R.id.menu_settings -> {
+                        // Acción para Settings
+                        true
+                    }
+                    else -> false
+                }
+            }
+
+            popup.show()
         }
+
     }
 
 
