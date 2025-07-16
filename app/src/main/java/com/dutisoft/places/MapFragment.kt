@@ -74,7 +74,8 @@ class MapFragment : Fragment() {
 
         mapView.getMapboxMap().loadStyleUri(Style.MAPBOX_STREETS) { style ->
             currentStyle = style
-            getUserLocationAndShowMarker(style)
+           // getUserLocationAndShowMarker(style)
+           loadPlacesAndShowMarkers(style)
         }
 
 
@@ -83,6 +84,97 @@ class MapFragment : Fragment() {
             fetchAllPlaces()
         }
     }
+
+
+    private fun loadPlacesAndShowMarkers(style: Style) {
+        // Marcador de lugares
+        val placeBitmap = BitmapFactory.decodeResource(resources, R.drawable.marker)
+        val scaledPlaceBitmap = Bitmap.createScaledBitmap(placeBitmap, 100, 100, false)
+        style.addImage("marker-icon", scaledPlaceBitmap)
+
+        // Marcador de ubicación actual
+        val hereBitmap = BitmapFactory.decodeResource(resources, R.drawable.here)
+        val scaledHereBitmap = Bitmap.createScaledBitmap(hereBitmap, 100, 100, false)
+        style.addImage("here-icon", scaledHereBitmap)
+
+        val annotationApi = mapView.annotations
+        val pointAnnotationManager = annotationApi.createPointAnnotationManager()
+
+        // Lanza corrutina para obtener lugares
+        lifecycleScope.launch {
+            try {
+                val places = withContext(Dispatchers.IO) {
+                    database.placeDao().getAllPlaces()
+                }
+
+                Log.d("MapFragment", "Total lugares: ${places.size}")
+
+                if (places.isEmpty()) {
+                    Toast.makeText(
+                        requireContext(),
+                        "No hay lugares registrados",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    // Agrega un marcador por cada lugar
+                    places.forEach { place ->
+                        val placePoint = Point.fromLngLat(place.longitude, place.latitude)
+                        val placeMarker = PointAnnotationOptions()
+                            .withPoint(placePoint)
+                            .withIconImage("marker-icon")
+
+                        pointAnnotationManager.create(placeMarker)
+                    }
+                }
+
+                // Obtiene ubicación actual
+                if (
+                    ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED &&
+                    ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    requestPermissions(
+                        arrayOf(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                        ),
+                        LOCATION_PERMISSION_REQUEST_CODE
+                    )
+                    return@launch
+                }
+
+                fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                    if (location != null) {
+                        val userPoint = Point.fromLngLat(location.longitude, location.latitude)
+
+                        // Agrega marcador para ubicación actual
+                        val hereMarker = PointAnnotationOptions()
+                            .withPoint(userPoint)
+                            .withIconImage("here-icon")
+
+                        pointAnnotationManager.create(hereMarker)
+
+                        // Opcional: mover cámara al usuario
+                        mapView.getMapboxMap().setCamera(
+                            com.mapbox.maps.CameraOptions.Builder()
+                                .center(userPoint)
+                                .zoom(14.0)
+                                .build()
+                        )
+                    } else {
+                        Toast.makeText(
+                            requireContext(),
+                            "No se pudo obtener la ubicación actual",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+
+            } catch (e: Exception) {
+                Log.e("MapFragment", "Error al obtener lugares: ${e.message}")
+            }
+        }
+    }
+
 
     private fun getUserLocationAndShowMarker(style: Style) {
         if (
@@ -189,7 +281,8 @@ class MapFragment : Fragment() {
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 currentStyle?.let {
-                    getUserLocationAndShowMarker(it)
+                   // getUserLocationAndShowMarker(it)
+                   loadPlacesAndShowMarkers(it)
                 } ?: Toast.makeText(requireContext(), "Estilo no cargado aún", Toast.LENGTH_SHORT)
                     .show()
             } else {
