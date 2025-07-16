@@ -50,5 +50,4 @@
     <string name="registrar">Registrar</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="mapbox_access_token">pk.eyJ1IjoibWlndWVlbDRuZ2VlbCIsImEiOiJjbWQ1Z2pzc2gwcHQ0MmlvaGJmejhjMHF6In0.DR7wiH1QB8QDwJdQNeNreg</string>
-</resources>
+   </resources>

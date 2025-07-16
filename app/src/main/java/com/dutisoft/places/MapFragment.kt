@@ -18,15 +18,30 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.dutisoft.places.BuildConfig
+import android.Manifest
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import androidx.core.app.ActivityCompat
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+import com.mapbox.geojson.Point
+import com.mapbox.maps.plugin.annotation.annotations
+import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
+import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
 
 
 class MapFragment : Fragment() {
 
     private var _binding: FragmentMapBinding? = null
     private val binding get() = _binding!!
+    private val LOCATION_PERMISSION_REQUEST_CODE = 1001
+    private var currentStyle: Style? = null
 
     private lateinit var database: AppDatabase
     private lateinit var mapView: MapView
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -40,12 +55,13 @@ class MapFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         database = DatabaseProvider.getDatabase(requireContext())
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
 
         // 🔥 Inicializamos el MapView con el token
         val mapInitOptions = MapInitOptions(
             requireContext(),
             resourceOptions = ResourceOptions.Builder()
-                .accessToken(BuildConfig.MAPBOX_ACCESS_TOKEN)
+                .accessToken(BuildConfig.MAPBOX_TOKEN)
                 .build()
         )
 
@@ -54,12 +70,72 @@ class MapFragment : Fragment() {
         // 🔥 Agregamos el MapView al contenedor
         binding.mapContainer.addView(mapView)
 
-        // 🔥 Cargamos el estilo del mapa
-        mapView.getMapboxMap().loadStyleUri(Style.MAPBOX_STREETS)
+
+
+        mapView.getMapboxMap().loadStyleUri(Style.MAPBOX_STREETS) { style ->
+            currentStyle = style
+            getUserLocationAndShowMarker(style)
+        }
+
 
         // Configurar el click en el ícono de la toolbar
         binding.toolbar.setNavigationOnClickListener {
             fetchAllPlaces()
+        }
+    }
+
+    private fun getUserLocationAndShowMarker(style: Style) {
+        if (
+            ActivityCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED &&
+            ActivityCompat.checkSelfPermission(
+                requireContext(),
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ),
+                LOCATION_PERMISSION_REQUEST_CODE
+            )
+            return
+        }
+
+        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            if (location != null) {
+                val userPoint = Point.fromLngLat(location.longitude, location.latitude)
+
+                // 👇 Carga y escala el ícono personalizado
+                val originalBitmap = BitmapFactory.decodeResource(resources, R.drawable.marker)
+                val scaledBitmap = Bitmap.createScaledBitmap(originalBitmap, 100, 100, false)
+                style.addImage("marker-icon", scaledBitmap)
+
+                val annotationApi = mapView.annotations
+                val pointAnnotationManager = annotationApi.createPointAnnotationManager()
+
+                val pointAnnotationOptions = PointAnnotationOptions()
+                    .withPoint(userPoint)
+                    .withIconImage("marker-icon") // usa el ID del ícono cargado
+
+                pointAnnotationManager.create(pointAnnotationOptions)
+
+                mapView.getMapboxMap().setCamera(
+                    com.mapbox.maps.CameraOptions.Builder()
+                        .center(userPoint)
+                        .zoom(14.0)
+                        .build()
+                )
+            } else {
+                Toast.makeText(
+                    requireContext(),
+                    "No se pudo obtener la ubicación",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
         }
     }
 
@@ -73,7 +149,11 @@ class MapFragment : Fragment() {
                 Log.d("MapFragment", "Total lugares: ${places.size}")
 
                 if (places.isEmpty()) {
-                    Toast.makeText(requireContext(), "No hay lugares registrados", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        requireContext(),
+                        "No hay lugares registrados",
+                        Toast.LENGTH_SHORT
+                    ).show()
                     return@launch
                 }
 
@@ -97,6 +177,31 @@ class MapFragment : Fragment() {
             }
         }
     }
+
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                currentStyle?.let {
+                    getUserLocationAndShowMarker(it)
+                } ?: Toast.makeText(requireContext(), "Estilo no cargado aún", Toast.LENGTH_SHORT)
+                    .show()
+            } else {
+                Toast.makeText(
+                    requireContext(),
+                    "Permiso de ubicación denegado",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
 
     override fun onStart() {
         super.onStart()

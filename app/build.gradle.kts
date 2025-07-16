@@ -20,13 +20,13 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // ✅ Token desde local.properties
-        val mapboxToken = project.findProperty("MAPBOX_ACCESS_TOKEN")
+        val mapboxToken = project.findProperty("MAPBOX_TOKEN")
             ?: Properties().apply {
                 load(File(rootDir, "local.properties").inputStream())
-            }.getProperty("MAPBOX_ACCESS_TOKEN")
+            }.getProperty("MAPBOX_TOKEN")
 
 
-        buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"$mapboxToken\"")
+        buildConfigField("String", "MAPBOX_TOKEN", "\"$mapboxToken\"")
 
     }
 
@@ -62,6 +62,7 @@ dependencies {
     implementation(libs.androidx.navigation.ui.ktx)
     implementation(libs.play.services.maps)
     implementation(libs.android)
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.activity)
