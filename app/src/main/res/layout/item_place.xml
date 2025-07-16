@@ -9,12 +9,11 @@
 
     <ImageView
         android:id="@+id/imageViewPlace"
-        android:layout_width="match_parent"
+        android:layout_width="400dp"
         android:layout_height="200dp"
         android:scaleType="centerCrop"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:background="@drawable/ufo"
+ />
 
     <TextView
         android:id="@+id/textViewPlaceName"
@@ -31,10 +30,7 @@
         android:layout_height="wrap_content"
         android:text="Categoría"
         android:textAppearance="?attr/textAppearanceCaption"
-        android:textColor="#666"
-        app:layout_constraintTop_toBottomOf="@id/textViewPlaceName"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:textColor="#666" />
 
     <TextView
         android:id="@+id/textViewDescription"
@@ -43,8 +39,5 @@
         android:text="Descripción del lugar."
         android:maxLines="3"
         android:ellipsize="end"
-        app:layout_constraintTop_toBottomOf="@id/textViewCategory"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginBottom="8dp" />
 </LinearLayout>

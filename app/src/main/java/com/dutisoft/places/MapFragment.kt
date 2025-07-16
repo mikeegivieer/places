@@ -10,9 +10,15 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.dutisoft.places.databinding.FragmentMapBinding
+import com.mapbox.maps.MapInitOptions
+import com.mapbox.maps.MapView
+import com.mapbox.maps.ResourceOptions
+import com.mapbox.maps.Style
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.dutisoft.places.BuildConfig
+
 
 class MapFragment : Fragment() {
 
@@ -20,6 +26,7 @@ class MapFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var database: AppDatabase
+    private lateinit var mapView: MapView
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -33,6 +40,22 @@ class MapFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         database = DatabaseProvider.getDatabase(requireContext())
+
+        // 🔥 Inicializamos el MapView con el token
+        val mapInitOptions = MapInitOptions(
+            requireContext(),
+            resourceOptions = ResourceOptions.Builder()
+                .accessToken(BuildConfig.MAPBOX_ACCESS_TOKEN)
+                .build()
+        )
+
+        mapView = MapView(requireContext(), mapInitOptions)
+
+        // 🔥 Agregamos el MapView al contenedor
+        binding.mapContainer.addView(mapView)
+
+        // 🔥 Cargamos el estilo del mapa
+        mapView.getMapboxMap().loadStyleUri(Style.MAPBOX_STREETS)
 
         // Configurar el click en el ícono de la toolbar
         binding.toolbar.setNavigationOnClickListener {
@@ -58,8 +81,7 @@ class MapFragment : Fragment() {
                     .inflate(R.layout.dialog_place_list, null)
 
                 val recyclerView = dialogView.findViewById<RecyclerView>(R.id.recyclerViewPlaces)
-                recyclerView.layoutManager = LinearLayoutManager(requireContext()) // 🔥 importante
-                Log.i("PLACES", places.toString())
+                recyclerView.layoutManager = LinearLayoutManager(requireContext())
                 recyclerView.adapter = PlaceAdapter(places)
 
                 val dialog = android.app.AlertDialog.Builder(requireContext())
@@ -76,9 +98,24 @@ class MapFragment : Fragment() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        mapView.onStart()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        mapView.onStop()
+    }
+
+    override fun onLowMemory() {
+        super.onLowMemory()
+        mapView.onLowMemory()
+    }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        mapView.onDestroy()
         _binding = null
     }
 }
