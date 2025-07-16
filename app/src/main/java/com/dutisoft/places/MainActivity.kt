@@ -19,8 +19,22 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.graphics.Bitmap
+import android.net.Uri
+import android.provider.MediaStore
+import android.util.Base64
+import android.view.View
+import android.widget.ImageView
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.FileProvider
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import kotlinx.coroutines.CoroutineStart
+import java.io.ByteArrayOutputStream
+import java.io.File
 
 
 class MainActivity : AppCompatActivity() {
@@ -28,6 +42,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var database: AppDatabase
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var photoUri: Uri
+    private lateinit var takePhotoLauncher: ActivityResultLauncher<Intent>
+    private var currentDialogView: View? = null
+    private var currentEncodedPhoto: String? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,6 +56,18 @@ class MainActivity : AppCompatActivity() {
         database = DatabaseProvider.getDatabase(this)
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
+        takePhotoLauncher =
+            registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (result.resultCode == Activity.RESULT_OK) {
+                    val imageBitmap = result.data?.extras?.get("data") as? Bitmap
+                    val imageView = currentDialogView?.findViewById<ImageView>(R.id.imageView2)
+
+                    imageBitmap?.let { bitmap ->
+                        imageView?.setImageBitmap(bitmap)
+                        currentEncodedPhoto = bitmapToBase64(bitmap)
+                    }
+                }
+            }
 
         // Mostrar el diálogo al presionar el FAB
         binding.fab.setOnClickListener {
@@ -47,8 +77,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun showCustomDialog() {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.activity_new_place, null)
+        currentDialogView = dialogView
         val LOCATION_PERMISSION_REQUEST_CODE = 100
         val nameInput = dialogView.findViewById<EditText>(R.id.editTextText2)
+        val takePhoto = dialogView.findViewById<ImageView>(R.id.imageView2)
+
         val categoryInput = dialogView.findViewById<EditText>(R.id.editTextText3)
         val descInput = dialogView.findViewById<EditText>(R.id.editTextText4)
         val saveButton = dialogView.findViewById<Button>(R.id.button2)
@@ -57,6 +90,12 @@ class MainActivity : AppCompatActivity() {
             .setView(dialogView)
             .setCancelable(true)
             .create()
+
+        takePhoto.setOnClickListener {
+            val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+            takePhotoLauncher.launch(intent)
+        }
+
 
         saveButton.setOnClickListener {
             val name = nameInput.text.toString().trim()
@@ -114,12 +153,16 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
 
+                        val encodedPhoto = currentEncodedPhoto
+
+
                         val place = Place(
                             name = name,
                             description = description,
                             latitude = latitude,
                             longitude = longitude,
-                            categoryId = categoryId.toInt()
+                            categoryId = categoryId.toInt(),
+                            photoUri = encodedPhoto ?: ""
                         )
 
                         withContext(Dispatchers.IO) {
@@ -146,6 +189,25 @@ class MainActivity : AppCompatActivity() {
 
 
         dialog.show()
+    }
+
+    private fun uriToBase64(uri: Uri): String? {
+        return try {
+            val inputStream = contentResolver.openInputStream(uri)
+            val bytes = inputStream?.readBytes()
+            inputStream?.close()
+            if (bytes != null) Base64.encodeToString(bytes, Base64.DEFAULT) else null
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    private fun bitmapToBase64(bitmap: Bitmap): String {
+        val outputStream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+        val byteArray = outputStream.toByteArray()
+        return Base64.encodeToString(byteArray, Base64.NO_WRAP)
     }
 
 
