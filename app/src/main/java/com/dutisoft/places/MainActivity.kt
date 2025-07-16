@@ -191,17 +191,7 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun uriToBase64(uri: Uri): String? {
-        return try {
-            val inputStream = contentResolver.openInputStream(uri)
-            val bytes = inputStream?.readBytes()
-            inputStream?.close()
-            if (bytes != null) Base64.encodeToString(bytes, Base64.DEFAULT) else null
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
+
 
     private fun bitmapToBase64(bitmap: Bitmap): String {
         val outputStream = ByteArrayOutputStream()
@@ -209,6 +199,7 @@ class MainActivity : AppCompatActivity() {
         val byteArray = outputStream.toByteArray()
         return Base64.encodeToString(byteArray, Base64.NO_WRAP)
     }
+
 
 
 }

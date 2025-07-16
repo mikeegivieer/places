@@ -22,6 +22,10 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.widget.ArrayAdapter
+import android.widget.SearchView
+import android.widget.Spinner
+import android.widget.TextView
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -89,6 +93,7 @@ class MapFragment : Fragment() {
                 when (menuItem.itemId) {
                     R.id.menu_my_places -> {
                         // Acción para My places
+                        showSearchDialog()
                         true
                     }
                     R.id.menu_settings -> {
@@ -334,5 +339,88 @@ class MapFragment : Fragment() {
         super.onDestroyView()
         mapView.onDestroy()
         _binding = null
+    }
+
+    private fun showSearchDialog() {
+        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.my_places, null)
+        val searchView = dialogView.findViewById<SearchView>(R.id.search_view)
+        val filterSpinner = dialogView.findViewById<Spinner>(R.id.filter_spinner)
+        val recyclerView = dialogView.findViewById<RecyclerView>(R.id.results_recycler_view)
+
+        val dialog = android.app.AlertDialog.Builder(requireContext())
+            .setView(dialogView)
+            .setCancelable(true)
+            .create()
+
+        val allPlaces = mutableListOf<String>() // nombres temporales
+        val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, allPlaces)
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
+
+        val resultAdapter = ResultAdapter(allPlaces)
+        recyclerView.adapter = resultAdapter
+
+
+        val spinnerAdapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_spinner_item,
+            listOf("Selecciona un filtro", "Por nombre", "Por categoría")
+        )
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        filterSpinner.adapter = spinnerAdapter
+
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?) = false
+
+            override fun onQueryTextChange(newText: String?): Boolean {
+                val filtered = allPlaces.filter {
+                    it.contains(newText ?: "", ignoreCase = true)
+                }
+                resultAdapter.updateList(filtered)
+                return true
+            }
+        })
+
+
+        // Llenar los datos desde Room
+        lifecycleScope.launch {
+            val places = withContext(Dispatchers.IO) {
+                database.placeDao().getAllPlaces()
+            }
+            allPlaces.clear()
+            allPlaces.addAll(places.map { it.name })
+            recyclerView.adapter?.notifyDataSetChanged()
+        }
+
+        dialog.show()
+    }
+
+
+
+}
+class ResultViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    fun bind(text: String) {
+        itemView.findViewById<TextView>(android.R.id.text1).text = text
+    }
+}
+
+class ResultAdapter(private val items: MutableList<String>) :
+    RecyclerView.Adapter<ResultViewHolder>() {
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ResultViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(android.R.layout.simple_list_item_1, parent, false)
+        return ResultViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: ResultViewHolder, position: Int) {
+        holder.bind(items[position])
+    }
+
+    override fun getItemCount(): Int = items.size
+
+    fun updateList(newItems: List<String>) {
+        items.clear()
+        items.addAll(newItems)
+        notifyDataSetChanged()
     }
 }
