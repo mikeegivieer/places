@@ -4,6 +4,7 @@ import AppDatabase
 import Category
 import Place
 import android.app.AlertDialog
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -11,16 +12,23 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.lifecycle.lifecycleScope
 import com.dutisoft.places.databinding.ActivityMainBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import android.Manifest
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
+
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var database: AppDatabase
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,6 +36,8 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         database = DatabaseProvider.getDatabase(this)
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
 
         // Mostrar el diálogo al presionar el FAB
         binding.fab.setOnClickListener {
@@ -37,7 +47,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showCustomDialog() {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.activity_new_place, null)
-
+        val LOCATION_PERMISSION_REQUEST_CODE = 100
         val nameInput = dialogView.findViewById<EditText>(R.id.editTextText2)
         val categoryInput = dialogView.findViewById<EditText>(R.id.editTextText3)
         val descInput = dialogView.findViewById<EditText>(R.id.editTextText4)
@@ -58,45 +68,85 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            lifecycleScope.launch {
-                try {
-                    val categoryId = withContext(Dispatchers.IO) {
-                        val dao = database.categoryDao()
-                        val existingCategory = dao.getCategoryByName(categoryName)
-                        if (existingCategory != null) {
-                            existingCategory.id
-                        } else {
-                            val newCategory = Category(name = categoryName)
-                            dao.insertCategory(newCategory) // Debe devolver el ID (Long)
+            // Verificar permisos de ubicación
+            if (
+                ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED &&
+                ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    ),
+                    LOCATION_PERMISSION_REQUEST_CODE
+                )
+                Toast.makeText(this, "Permiso de ubicación requerido", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+                if (location == null) {
+                    Toast.makeText(this, "No se pudo obtener la ubicación", Toast.LENGTH_SHORT)
+                        .show()
+                    return@addOnSuccessListener
+                }
+
+                val latitude = location.latitude
+                val longitude = location.longitude
+
+                lifecycleScope.launch {
+                    try {
+                        val categoryId = withContext(Dispatchers.IO) {
+                            val dao = database.categoryDao()
+                            val existingCategory = dao.getCategoryByName(categoryName)
+                            if (existingCategory != null) {
+                                existingCategory.id
+                            } else {
+                                val newCategory = Category(name = categoryName)
+                                dao.insertCategory(newCategory)
+                            }
                         }
+
+                        val place = Place(
+                            name = name,
+                            description = description,
+                            latitude = latitude,
+                            longitude = longitude,
+                            categoryId = categoryId.toInt()
+                        )
+
+                        withContext(Dispatchers.IO) {
+                            database.placeDao().insertPlace(place)
+                        }
+
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Lugar guardado correctamente",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        dialog.dismiss()
+                    } catch (e: Exception) {
+                        Log.e("ERROR", e.toString())
+                        Toast.makeText(
+                            this@MainActivity,
+                            "Error al guardar: ${e.message}",
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
-
-                    val place = Place(
-                        name = name,
-                        description = description,
-                        latitude = 0.0, // Por ahora, sin geolocalización
-                        longitude = 0.0,
-                        categoryId = categoryId.toInt()
-                    )
-
-                    withContext(Dispatchers.IO) {
-                        database.placeDao().insertPlace(place)
-                    }
-
-                    Toast.makeText(this@MainActivity, "Lugar guardado correctamente", Toast.LENGTH_SHORT).show()
-                    dialog.dismiss()
-                } catch (e: Exception) {
-                    Log.e("ERROR", e.toString())
-                    Toast.makeText(this@MainActivity, "Error al guardar: ${e.message}", Toast.LENGTH_LONG).show()
                 }
             }
         }
 
+
         dialog.show()
     }
-
-
-
 
 
 }
