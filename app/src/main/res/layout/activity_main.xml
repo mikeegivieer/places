@@ -12,13 +12,14 @@
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="@dimen/fab_margin"
         android:layout_marginBottom="16dp"
-        android:src="@drawable/baseline_add_circle_24"
-
+        android:contentDescription="TODO"
+        app:srcCompat="@drawable/baseline_add_location_alt_24"
+        android:backgroundTint="#bce7fd"
         />
 
 
