@@ -54,4 +54,8 @@
     <string name="category">Category</string>
     <string name="description">Description</string>
     <string name="Save">Save</string>
+    <string name="permiso_no_concecido">Estilo no concedido aún</string>
+    <string name="permiso_de_ubicacion_denegado">Permiso de ubicación denegado</string>
+    <string name="no_hay_lugares_registrados">No hay lugares registrados</string>
+    <string name="no_se_pudo_obtener_la_ubicaci_n_actual">No se pudo obtener la ubicación actual</string>
 </resources>
