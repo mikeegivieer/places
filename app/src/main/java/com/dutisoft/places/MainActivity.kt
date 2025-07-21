@@ -26,7 +26,9 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Base64
+import android.util.TypedValue
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -65,11 +67,20 @@ class MainActivity : AppCompatActivity() {
                 if (result.resultCode == Activity.RESULT_OK) {
                     val imageBitmap = result.data?.extras?.get("data") as? Bitmap
                     val imageView = currentDialogView?.findViewById<ImageView>(R.id.imageView2)
-
+                    val imageView1 = currentDialogView?.findViewById<ImageView>(R.id.imageView1)
+                   imageView1?.visibility = View.INVISIBLE
+                  imageView?.visibility = View.VISIBLE
                     imageBitmap?.let { bitmap ->
-                        imageView?.setImageBitmap(bitmap)
+                        imageView?.apply {
+                            setImageBitmap(bitmap)
+                            scaleType = ImageView.ScaleType.CENTER_CROP // Opcional para buen encuadre
+                        }
+
                         currentEncodedPhoto = bitmapToBase64(bitmap)
                     }
+
+
+
                 }
             }
 
@@ -84,7 +95,7 @@ class MainActivity : AppCompatActivity() {
         currentDialogView = dialogView
         val LOCATION_PERMISSION_REQUEST_CODE = 100
         val nameInput = dialogView.findViewById<EditText>(R.id.editTextText2)
-        val takePhoto = dialogView.findViewById<ImageView>(R.id.imageView2)
+        val takePhoto = dialogView.findViewById<ImageView>(R.id.imageView1)
 
         val categoryInput = dialogView.findViewById<EditText>(R.id.editTextText3)
         val descInput = dialogView.findViewById<EditText>(R.id.editTextText4)

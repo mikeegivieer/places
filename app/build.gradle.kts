@@ -63,6 +63,7 @@ dependencies {
     implementation(libs.play.services.maps)
     implementation(libs.android)
     implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation ("com.google.code.gson:gson:2.10.1") // o la versión que uses
 
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.activity)

@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView
 import android.widget.SearchView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 
 // Google Location
 import com.google.android.gms.location.FusedLocationProviderClient
@@ -38,6 +39,7 @@ import kotlinx.coroutines.withContext
 
 // Project
 import com.dutisoft.places.databinding.FragmentMapBinding
+import com.google.gson.JsonObject
 
 
 class MapFragment : Fragment() {
@@ -57,9 +59,6 @@ class MapFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         _binding = FragmentMapBinding.inflate(inflater, container, false)
-
-
-
         permissionLauncher = registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions()
         ) { permissions ->
@@ -88,10 +87,8 @@ class MapFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         database = DatabaseProvider.getDatabase(requireContext())
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireContext())
-
         val mapInitOptions = MapInitOptions(
             requireContext(),
             resourceOptions = ResourceOptions.Builder().accessToken(BuildConfig.MAPBOX_TOKEN)
@@ -101,9 +98,6 @@ class MapFragment : Fragment() {
         mapView = MapView(requireContext(), mapInitOptions)
 
         binding.mapContainer.addView(mapView)
-
-
-
         mapView.getMapboxMap().loadStyleUri(Style.MAPBOX_STREETS) { style ->
             currentStyle = style
             loadPlacesAndShowMarkers(style)
@@ -117,7 +111,6 @@ class MapFragment : Fragment() {
             popup.setOnMenuItemClickListener { menuItem ->
                 when (menuItem.itemId) {
                     R.id.menu_my_places -> {
-
                         showSearchDialog()
                         true
                     }
@@ -214,14 +207,42 @@ class MapFragment : Fragment() {
                         Toast.LENGTH_SHORT
                     ).show()
                 } else {
-                    // Agrega un marcador por cada lugar
+
+
                     places.forEach { place ->
                         val placePoint = Point.fromLngLat(place.longitude, place.latitude)
-                        val placeMarker = PointAnnotationOptions().withPoint(placePoint)
+
+                        val json = JsonObject().apply {
+                            addProperty("id", place.id)
+                            addProperty("name", place.name)
+                            addProperty("description", place.description ?: "Sin descripción")
+                        }
+
+                        val placeMarker = PointAnnotationOptions()
+                            .withPoint(placePoint)
                             .withIconImage("marker-icon")
+                            .withData(json)
 
                         pointAnnotationManager.create(placeMarker)
+
+                        pointAnnotationManager.addClickListener { annotation ->
+                            val data = annotation.getData()
+                            val name = data?.asJsonObject?.get("name")?.asString ?: "Lugar"
+                            val description = data?.asJsonObject?.get("description")?.asString ?: "Sin descripción"
+
+                            AlertDialog.Builder(requireContext())
+                                .setTitle(name)
+                                .setMessage(description)
+                                .setPositiveButton("Cerrar", null)
+                                .show()
+
+                            true
+                        }
+
                     }
+
+
+
                 }
 
                 // Obtiene ubicación actual
