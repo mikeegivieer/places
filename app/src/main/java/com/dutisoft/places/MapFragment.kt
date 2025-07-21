@@ -2,6 +2,7 @@ package com.dutisoft.places
 
 // Android
 import AppDatabase
+import Place
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -135,16 +136,13 @@ class MapFragment : Fragment() {
         val filterSpinner = dialogView.findViewById<Spinner>(R.id.filter_spinner)
         val recyclerView = dialogView.findViewById<RecyclerView>(R.id.results_recycler_view)
 
-        val dialog = android.app.AlertDialog.Builder(requireContext()).setView(dialogView)
+        val dialog = AlertDialog.Builder(requireContext()).setView(dialogView)
             .setCancelable(true).create()
 
-        val allPlaces = mutableListOf<String>()
-        ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, allPlaces)
-        recyclerView.layoutManager = LinearLayoutManager(requireContext())
-
+        val allPlaces = mutableListOf<Place>()
         val resultAdapter = ResultAdapter(allPlaces)
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = resultAdapter
-
 
         val spinnerAdapter = ArrayAdapter(
             requireContext(), android.R.layout.simple_spinner_item, listOf("")
@@ -157,23 +155,21 @@ class MapFragment : Fragment() {
 
             override fun onQueryTextChange(newText: String?): Boolean {
                 val filtered = allPlaces.filter {
-                    it.contains(newText ?: "", ignoreCase = true)
+                    it.name.contains(newText ?: "", ignoreCase = true)
                 }
                 resultAdapter.updateList(filtered)
                 return true
             }
         })
 
-
         lifecycleScope.launch {
             val places = withContext(Dispatchers.IO) {
                 database.placeDao().getAllPlaces()
             }
             allPlaces.clear()
-            allPlaces.addAll(places.map { it.name })
+            allPlaces.addAll(places)
             resultAdapter.updateList(allPlaces)
         }
-
 
         dialog.show()
     }
@@ -300,26 +296,35 @@ class ResultViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
     }
 }
 
-class ResultAdapter(private val items: MutableList<String>) :
-    RecyclerView.Adapter<ResultViewHolder>() {
+class ResultAdapter(private var items: List<Place>) :
+    RecyclerView.Adapter<ResultAdapter.PlaceViewHolder>() {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ResultViewHolder {
+    class PlaceViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val name: TextView = itemView.findViewById(R.id.textViewPlaceName)
+        val category: TextView = itemView.findViewById(R.id.textViewCategory)
+        val description: TextView = itemView.findViewById(R.id.textViewDescription)
+
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PlaceViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(android.R.layout.simple_list_item_1, parent, false)
-        return ResultViewHolder(view)
+            .inflate(R.layout.place_to_go, parent, false)
+        return PlaceViewHolder(view)
     }
 
-    override fun onBindViewHolder(holder: ResultViewHolder, position: Int) {
-        holder.bind(items[position])
+    override fun onBindViewHolder(holder: PlaceViewHolder, position: Int) {
+        val place = items[position]
+        holder.name.text = place.name
+        holder.category.text = place.categoryId.toString()
+        holder.description.text = place.description
+
+
     }
 
-    override fun getItemCount(): Int = items.size
+    override fun getItemCount() = items.size
 
-    fun updateList(newItems: List<String>) {
-        val previousSize = items.size
-        items.clear()
-        items.addAll(newItems)
-        notifyItemRangeInserted(0, items.size)
+    fun updateList(newItems: List<Place>) {
+        items = newItems
+        notifyDataSetChanged()
     }
-
 }
