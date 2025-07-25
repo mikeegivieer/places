@@ -189,6 +189,12 @@ class MainActivity : AppCompatActivity() {
                             "Lugar guardado correctamente",
                             Toast.LENGTH_SHORT
                         ).show()
+
+                        val mapFragment =
+                            supportFragmentManager.findFragmentById(R.id.map_container) as? MapFragment
+                        mapFragment?.refreshMarkers()
+
+
                         dialog.dismiss()
                     } catch (e: Exception) {
                         Log.e("ERROR", e.toString())

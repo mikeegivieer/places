@@ -130,6 +130,14 @@ class MapFragment : Fragment() {
 
     }
 
+
+    fun refreshMarkers() {
+        currentStyle?.let { style ->
+            loadPlacesAndShowMarkers(style)
+        }
+    }
+
+
     private fun showSearchDialog() {
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.my_places, null)
         val searchView = dialogView.findViewById<SearchView>(R.id.search_view)
@@ -322,6 +330,9 @@ class ResultAdapter(private var items: List<Place>) :
     }
 
     override fun getItemCount() = items.size
+
+
+
 
     fun updateList(newItems: List<Place>) {
         items = newItems
