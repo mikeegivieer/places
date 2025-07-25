@@ -48,7 +48,7 @@ class MapFragment : Fragment() {
 
     private var _binding: FragmentMapBinding? = null
     private val binding get() = _binding!!
-    private var currentStyle: Style? = null
+    var currentStyle: Style? = null
 
     private lateinit var database: AppDatabase
     private lateinit var mapView: MapView
@@ -137,6 +137,58 @@ class MapFragment : Fragment() {
         }
     }
 
+    fun showUserLocationWithMarker(style: Style) {
+        val hereBitmap = BitmapFactory.decodeResource(resources, R.drawable.here)
+        val scaledHereBitmap = Bitmap.createScaledBitmap(hereBitmap, 100, 100, false)
+        style.addImage("here-icon", scaledHereBitmap)
+
+        val annotationApi = mapView.annotations
+        val pointAnnotationManager = annotationApi.createPointAnnotationManager()
+
+        if (
+            ActivityCompat.checkSelfPermission(
+                requireContext(), Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED &&
+            ActivityCompat.checkSelfPermission(
+                requireContext(), Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            permissionLauncher.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+            return
+        }
+
+        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
+            if (location != null) {
+                val userPoint = Point.fromLngLat(location.longitude, location.latitude)
+
+                val hereMarker = PointAnnotationOptions()
+                    .withPoint(userPoint)
+                    .withIconImage("here-icon")
+
+                pointAnnotationManager.create(hereMarker)
+
+                // Centrar cámara
+                mapView.getMapboxMap().setCamera(
+                    CameraOptions.Builder()
+                        .center(userPoint)
+                        .zoom(14.0)
+                        .build()
+                )
+            } else {
+                Toast.makeText(
+                    requireContext(),
+                    getString(R.string.no_se_pudo_obtener_la_ubicaci_n_actual),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
+    }
+
 
     private fun showSearchDialog() {
         val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.my_places, null)
@@ -187,11 +239,6 @@ class MapFragment : Fragment() {
         val placeBitmap = BitmapFactory.decodeResource(resources, R.drawable.marker)
         val scaledPlaceBitmap = Bitmap.createScaledBitmap(placeBitmap, 100, 100, false)
         style.addImage("marker-icon", scaledPlaceBitmap)
-
-        // Marcador de ubicación actual
-        val hereBitmap = BitmapFactory.decodeResource(resources, R.drawable.here)
-        val scaledHereBitmap = Bitmap.createScaledBitmap(hereBitmap, 100, 100, false)
-        style.addImage("here-icon", scaledHereBitmap)
 
         val annotationApi = mapView.annotations
         val pointAnnotationManager = annotationApi.createPointAnnotationManager()

@@ -86,6 +86,13 @@ class MainActivity : AppCompatActivity() {
 
         // Mostrar el diálogo al presionar el FAB
         binding.fab.setOnClickListener {
+            val mapFragment =
+                supportFragmentManager.findFragmentById(R.id.map_container) as? MapFragment
+            mapFragment?.let { fragment ->
+                fragment.currentStyle?.let { style ->
+                    fragment.showUserLocationWithMarker(style)
+                } ?: Toast.makeText(this, "Estilo no cargado aún", Toast.LENGTH_SHORT).show()
+            }
             showCustomDialog()
         }
     }
